@@ -1,4 +1,3 @@
-import azure.ai.vision as ai_vision
 import uvicorn
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -26,8 +25,6 @@ configuration = Configuration(access_token=config['line_channel_access_token'])
 handler = WebhookHandler(config['line_channel_secret'])
 
 config = utils.read_config()
-service = ai_vision.VisionServiceOptions(key=config['vision_key'],
-                                         endpoint=config['vision_endpoint'])
 
 
 @app.post("/callback")
@@ -81,31 +78,6 @@ def handle_follow(event):
             )
         )
 
-
-analysis_options = ai_vision.ImageAnalysisOptions()
-analysis_options.features = (
-    ai_vision.ImageAnalysisFeature.CAPTION
-)
-analysis_options.language = "en"
-
-test_source = ai_vision.VisionSource(
-    url="https://learn.microsoft.com/zh-tw/azure/ai-services/computer-vision/media/quickstarts/presentation.png")
-
-image_analyzer = ai_vision.ImageAnalyzer(service, test_source, analysis_options)
-result = image_analyzer.analyze()
-
-if result.reason == ai_vision.ImageAnalysisResultReason.ANALYZED:
-    if result.caption is not None:
-        caption = result.caption.content
-        confidence = result.caption.confidence
-        print(f"Caption: {caption}")
-        print(f"Confidence: {confidence}")
-else:
-    error_details = ai_vision.ImageAnalysisErrorDetails.from_result(result)
-    print("Analysis failed.")
-    print(f"   Error reason: {error_details.reason}")
-    print(f"   Error code: {error_details.error_code}")
-    print(f"   Error message: {error_details.message}")
 
 if __name__ == '__main__':
     uvicorn.run(app, port=5000)
