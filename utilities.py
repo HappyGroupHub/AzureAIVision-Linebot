@@ -16,6 +16,10 @@ def config_file_generator():
 # Azure AI Vision API Key
 vision_key: ""
 vision_endpoint: ""
+
+# Line Channel Access Token & Secret
+line_channel_access_token: ""
+line_channel_secret: ""
 """
                    )
         file.close()
@@ -40,7 +44,9 @@ def read_config():
             data = yaml.load(file, Loader=SafeLoader)
             config = {
                 'vision_key': data['vision_key'],
-                'vision_endpoint': data['vision_endpoint']
+                'vision_endpoint': data['vision_endpoint'],
+                'line_channel_access_token': data['line_channel_access_token'],
+                'line_channel_secret': data['line_channel_secret']
             }
             file.close()
             return config

@@ -1,2 +1,4 @@
 azure-ai-vision==0.15.1b1
 PyYAML~=6.0.1
+uvicorn~=0.23.2
+fastapi~=0.104.1
