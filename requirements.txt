@@ -1,0 +1,2 @@
+azure-ai-vision==0.15.1b1
+PyYAML~=6.0.1
