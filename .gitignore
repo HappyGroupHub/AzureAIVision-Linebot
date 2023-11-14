@@ -1,6 +1,9 @@
 # Config File
 config.yml
 
+# Downloaded Files
+downloads
+
 # Logs
 *.log
 logs

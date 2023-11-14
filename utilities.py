@@ -1,6 +1,9 @@
+import datetime
+import os
 import sys
 from os.path import exists
 
+import requests
 import yaml
 from yaml import SafeLoader
 
@@ -55,3 +58,33 @@ def read_config():
             "An error occurred while reading config.yml, please check if the file is corrected filled.\n"
             "If the problem can't be solved, consider delete config.yml and restart the program.\n")
         sys.exit()
+
+
+def download_file_from_line(message_id, message_type):
+    """Get file binary and save them in PC.
+
+    Use to download files from LINE.
+
+    :param message_id: message id from line
+    :param message_type: message type from line
+    :return str: file path
+    """
+    config = read_config()
+    url = f'https://api-data.line.me/v2/bot/message/{message_id}/content'
+    headers = {'Authorization': f'Bearer {config["line_channel_access_token"]}'}
+    source = requests.get(url, headers=headers)
+
+    file_type = {
+        'image': 'jpg',
+        'video': 'mp4',
+        'audio': 'm4a',
+    }
+    path = f'./downloads'
+    if not os.path.exists(path):
+        os.makedirs(path)
+    file_path = \
+        f"{path}/{datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')}.{file_type[message_type]}"
+    with open(file_path, 'wb') as fd:
+        for chunk in source.iter_content():
+            fd.write(chunk)
+    return file_path

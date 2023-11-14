@@ -5,7 +5,7 @@ from linebot.v3 import WebhookHandler
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.messaging import Configuration, ApiClient, MessagingApi, ReplyMessageRequest, \
     TextMessage
-from linebot.v3.webhooks import MessageEvent, TextMessageContent, FollowEvent
+from linebot.v3.webhooks import MessageEvent, TextMessageContent, FollowEvent, ImageMessageContent
 
 import utilities as utils
 
@@ -49,6 +49,7 @@ async def callback(request: Request):
 
 @handler.add(MessageEvent, message=TextMessageContent)
 def handle_message(event):
+    """Handle text message event."""
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
         user_id = event.source.user_id
@@ -63,6 +64,27 @@ def handle_message(event):
                     messages=[TextMessage(text=reply_message)]
                 )
             )
+
+
+@handler.add(MessageEvent, message=ImageMessageContent)
+def handle_image(event):
+    """Handle image message event."""
+    with ApiClient(configuration) as api_client:
+        line_bot_api = MessagingApi(api_client)
+        reply_token = event.reply_token
+    if event.source.type == 'user':
+        user_id = event.source.user_id
+        message_id = event.message.id
+        image_path = utils.download_file_from_line(message_id, 'image')
+        reply_message = image_path
+        line_bot_api.reply_message_with_http_info(
+            ReplyMessageRequest(
+                reply_token=reply_token,
+                messages=[TextMessage(text=reply_message)]
+            )
+        )
+    if event.source.type == 'group':
+        return
 
 
 @handler.add(FollowEvent)
