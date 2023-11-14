@@ -7,6 +7,7 @@ from linebot.v3.messaging import Configuration, ApiClient, MessagingApi, ReplyMe
     TextMessage
 from linebot.v3.webhooks import MessageEvent, TextMessageContent, FollowEvent, ImageMessageContent
 
+import ai_vision
 import utilities as utils
 
 app = FastAPI()
@@ -52,7 +53,6 @@ def handle_message(event):
     """Handle text message event."""
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
-        user_id = event.source.user_id
         message_received = event.message.text
         reply_token = event.reply_token
 
@@ -73,10 +73,11 @@ def handle_image(event):
         line_bot_api = MessagingApi(api_client)
         reply_token = event.reply_token
     if event.source.type == 'user':
-        user_id = event.source.user_id
         message_id = event.message.id
         image_path = utils.download_file_from_line(message_id, 'image')
-        reply_message = image_path
+        analysis = ai_vision.get_image_caption(file_name=image_path)
+        reply_message = f"Caption: {analysis['caption']}\n" \
+                        f"Confidence: {analysis['confidence']}"
         line_bot_api.reply_message_with_http_info(
             ReplyMessageRequest(
                 reply_token=reply_token,
