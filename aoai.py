@@ -1,11 +1,15 @@
 import datetime
 import json
+import os
 import time
 
 import httpx
 import openai
-import os
 import requests
+
+import utilities as utils
+
+config = utils.read_config()
 
 
 class CustomHTTPTransport(httpx.HTTPTransport):
@@ -67,8 +71,8 @@ class CustomHTTPTransport(httpx.HTTPTransport):
 
 
 client = openai.AzureOpenAI(
-    azure_endpoint='API_ENDPOINT',
-    api_key='API_KEY',
+    azure_endpoint=config['aoai_endpoint'],
+    api_key=config['aoai_key'],
     api_version='2023-10-01-preview',
     http_client=httpx.Client(
         transport=CustomHTTPTransport(),

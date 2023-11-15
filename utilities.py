@@ -20,6 +20,10 @@ def config_file_generator():
 vision_key: ""
 vision_endpoint: ""
 
+# Azure OpenAI API Key
+aoai_key: '9197f1e023364cd489f3c29e71dceaa4'
+aoai_endpoint: 'https://20th-ld-aivision-aoai.openai.azure.com/'
+
 # Line Channel Access Token & Secret
 line_channel_access_token: ""
 line_channel_secret: ""
@@ -48,6 +52,8 @@ def read_config():
             config = {
                 'vision_key': data['vision_key'],
                 'vision_endpoint': data['vision_endpoint'],
+                'aoai_key': data['aoai_key'],
+                'aoai_endpoint': data['aoai_endpoint'],
                 'line_channel_access_token': data['line_channel_access_token'],
                 'line_channel_secret': data['line_channel_secret']
             }
