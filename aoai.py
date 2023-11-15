@@ -10,8 +10,8 @@ import requests
 
 class CustomHTTPTransport(httpx.HTTPTransport):
     def handle_request(
-        self,
-        request: httpx.Request,
+            self,
+            request: httpx.Request,
     ) -> httpx.Response:
         if "images/generations" in request.url.path and request.url.params[
             "api-version"
@@ -34,7 +34,8 @@ class CustomHTTPTransport(httpx.HTTPTransport):
             start_time = time.time()
             while response.json()["status"] not in ["succeeded", "failed"]:
                 if time.time() - start_time > timeout_secs:
-                    timeout = {"error": {"code": "Timeout", "message": "Operation polling timed out."}}
+                    timeout = {
+                        "error": {"code": "Timeout", "message": "Operation polling timed out."}}
                     return httpx.Response(
                         status_code=400,
                         headers=response.headers,
@@ -66,8 +67,8 @@ class CustomHTTPTransport(httpx.HTTPTransport):
 
 
 client = openai.AzureOpenAI(
-    azure_endpoint='AOAI_ENDPOINT',
-    api_key='AOAI_KEY',
+    azure_endpoint='API_ENDPOINT',
+    api_key='API_KEY',
     api_version='2023-10-01-preview',
     http_client=httpx.Client(
         transport=CustomHTTPTransport(),
@@ -75,15 +76,17 @@ client = openai.AzureOpenAI(
 )
 
 
-generated_image = client.images.generate(prompt="a cute baby seal")
-image_url = generated_image.data[0].url  # extract image URL from response
+def generate_image_with_text(text):
+    generated_image = client.images.generate(prompt=text)
+    image_url = generated_image.data[0].url  # extract image URL from response
 
-
-path = f'./downloads'
-if not os.path.exists(path):
-    os.makedirs(path)
-file_path = \
+    path = f'./downloads'
+    if not os.path.exists(path):
+        os.makedirs(path)
+    file_path = \
         f"{path}/{datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')}.png"
-results = requests.get(image_url).content  # download the image
-with open(file_path, "wb") as image_file:
-    image_file.write(results)
+    results = requests.get(image_url).content  # download the image
+    with open(file_path, "wb") as image_file:
+        image_file.write(results)
+    response = {'image_url': image_url, 'file_path': file_path}
+    return response

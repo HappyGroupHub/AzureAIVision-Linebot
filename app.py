@@ -4,10 +4,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from linebot.v3 import WebhookHandler
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.messaging import Configuration, ApiClient, MessagingApi, ReplyMessageRequest, \
-    TextMessage
+    TextMessage, ImageMessage
 from linebot.v3.webhooks import MessageEvent, TextMessageContent, FollowEvent, ImageMessageContent
 
 import ai_vision
+import aoai
 import utilities as utils
 
 app = FastAPI()
@@ -62,6 +63,15 @@ def handle_message(event):
                 ReplyMessageRequest(
                     reply_token=reply_token,
                     messages=[TextMessage(text=reply_message)]
+                )
+            )
+        else:
+            image_url = aoai.generate_image_with_text(message_received)['image_url']
+            line_bot_api.reply_message_with_http_info(
+                ReplyMessageRequest(
+                    reply_token=reply_token,
+                    messages=[ImageMessage(original_content_url=image_url,
+                                           preview_image_url=image_url)]
                 )
             )
 
