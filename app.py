@@ -27,6 +27,7 @@ configuration = Configuration(access_token=config['line_channel_access_token'])
 handler = WebhookHandler(config['line_channel_secret'])
 
 config = utils.read_config()
+user_action = {}
 
 
 @app.post("/callback")
@@ -55,23 +56,46 @@ def handle_message(event):
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
         message_received = event.message.text
+        user_id = event.source.user_id
         reply_token = event.reply_token
 
-        if message_received == "test":
-            reply_message = f"Hello World!"
+        if message_received == "Analyze Image":
+            user_action[user_id] = 'analyze_image'
+            reply_message = f"Please upload ONE image you wished to analyze.\n" \
+                            f"Processing might take a while, please be patient for the result."
             line_bot_api.reply_message_with_http_info(
                 ReplyMessageRequest(
                     reply_token=reply_token,
                     messages=[TextMessage(text=reply_message)]
                 )
             )
-        else:
-            image_url = aoai.generate_image_with_text(message_received)['image_url']
+        elif message_received == "Generate Image":
+            user_action[user_id] = 'generate_image'
+            reply_message = f"Tell me what image would you like to generate today!\n" \
+                            f"Processing might take a while, please be patient for the result."
             line_bot_api.reply_message_with_http_info(
                 ReplyMessageRequest(
                     reply_token=reply_token,
-                    messages=[ImageMessage(original_content_url=image_url,
-                                           preview_image_url=image_url)]
+                    messages=[TextMessage(text=reply_message)]
+                )
+            )
+        elif user_id in user_action:
+            if user_action[user_id] == 'generate_image':
+                user_action.pop(user_id)
+                image_url = aoai.generate_image_with_text(message_received)['image_url']
+                line_bot_api.reply_message_with_http_info(
+                    ReplyMessageRequest(
+                        reply_token=reply_token,
+                        messages=[ImageMessage(original_content_url=image_url,
+                                               preview_image_url=image_url)]
+                    )
+                )
+        else:
+            reply_message = f"Please open the menu to select which service you want to use."
+            line_bot_api.reply_message_with_http_info(
+                ReplyMessageRequest(
+                    reply_token=reply_token,
+                    messages=[TextMessage(text=reply_message)]
                 )
             )
 
@@ -81,21 +105,30 @@ def handle_image(event):
     """Handle image message event."""
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
-        reply_token = event.reply_token
-    if event.source.type == 'user':
+        user_id = event.source.user_id
         message_id = event.message.id
-        image_path = utils.download_file_from_line(message_id, 'image')
-        analysis = ai_vision.get_image_caption(file_name=image_path)
-        reply_message = f"Caption: {analysis['caption']}\n" \
-                        f"Confidence: {analysis['confidence']}"
+        reply_token = event.reply_token
+    if user_id in user_action:
+        if user_action[user_id] == 'analyze_image':
+            user_action.pop(user_id)
+            image_path = utils.download_file_from_line(message_id, 'image')
+            analysis = ai_vision.get_image_caption(file_name=image_path)
+            reply_message = f"Caption: {analysis['caption']}\n" \
+                            f"Confidence: {analysis['confidence']}"
+            line_bot_api.reply_message_with_http_info(
+                ReplyMessageRequest(
+                    reply_token=reply_token,
+                    messages=[TextMessage(text=reply_message)]
+                )
+            )
+    else:
+        reply_message = f"Please open the menu to select which service you want to use."
         line_bot_api.reply_message_with_http_info(
             ReplyMessageRequest(
                 reply_token=reply_token,
                 messages=[TextMessage(text=reply_message)]
             )
         )
-    if event.source.type == 'group':
-        return
 
 
 @handler.add(FollowEvent)
