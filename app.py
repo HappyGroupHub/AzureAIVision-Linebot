@@ -81,13 +81,23 @@ def handle_message(event):
             )
         elif user_id in user_action:
             if user_action[user_id] == 'generate_image':
-                user_action.pop(user_id)
+                user_action[user_id] = 'processing'
                 image_url = aoai.generate_image_with_text(message_received)['image_url']
+                user_action.pop(user_id)
                 line_bot_api.reply_message_with_http_info(
                     ReplyMessageRequest(
                         reply_token=reply_token,
                         messages=[ImageMessage(original_content_url=image_url,
                                                preview_image_url=image_url)]
+                    )
+                )
+            elif user_action[user_id] == 'processing':
+                reply_message = f"We're still processing your previous request, " \
+                                f"please wait for the result patiently."
+                line_bot_api.reply_message_with_http_info(
+                    ReplyMessageRequest(
+                        reply_token=reply_token,
+                        messages=[TextMessage(text=reply_message)]
                     )
                 )
         else:
@@ -115,6 +125,15 @@ def handle_image(event):
             analysis = ai_vision.get_image_caption(file_name=image_path)
             reply_message = f"Caption: {analysis['caption']}\n" \
                             f"Confidence: {analysis['confidence']}"
+            line_bot_api.reply_message_with_http_info(
+                ReplyMessageRequest(
+                    reply_token=reply_token,
+                    messages=[TextMessage(text=reply_message)]
+                )
+            )
+        elif user_action[user_id] == 'processing':
+            reply_message = f"We're still processing your previous request, " \
+                            f"please wait for the result patiently."
             line_bot_api.reply_message_with_http_info(
                 ReplyMessageRequest(
                     reply_token=reply_token,
