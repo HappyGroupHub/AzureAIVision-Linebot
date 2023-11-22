@@ -1,4 +1,5 @@
 import azure.ai.vision as sdk
+import requests
 
 import utilities as utils
 
@@ -41,3 +42,21 @@ def get_image_caption(image_url=None, file_name=None):
         print(f"   Error code: {error_details.error_code}")
         print(f"   Error message: {error_details.message}")
     return response
+
+
+def get_vectorize_image(image_path):
+    """Get vectorize image from Azure AI Vision API.
+
+    :param str image_path: Image file path
+    :return dict response : Response from Azure AI Vision API
+    """
+    with open(image_path, 'rb') as f:
+        image_data = f.read()
+    url = (
+        f'{config["vision_endpoint"]}computervision/retrieval:vectorizeImage?api-version=2023-02-01'
+        f'-preview&modelVersion=latest')
+    headers = {'Content-type': 'application/octet-stream',
+               'Ocp-Apim-Subscription-Key': config['vision_key']}
+    result = requests.post(url=url, headers=headers, data=image_data)
+    image_vector = result.json()['vector']
+    return image_vector
