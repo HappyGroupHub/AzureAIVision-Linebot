@@ -48,7 +48,7 @@ def get_vectorize_image(image_path):
     """Get vectorize image from Azure AI Vision API.
 
     :param str image_path: Image file path
-    :return dict response : Response from Azure AI Vision API
+    :return list image_vector : Image vector
     """
     with open(image_path, 'rb') as f:
         image_data = f.read()
@@ -60,3 +60,20 @@ def get_vectorize_image(image_path):
     result = requests.post(url=url, headers=headers, data=image_data)
     image_vector = result.json()['vector']
     return image_vector
+
+
+def get_vectorize_text(text):
+    """Get vectorize text from Azure AI Vision API.
+
+    :param str text: Text
+    :return list text_vector : Text vector
+    """
+    url = (
+        f'{config["vision_endpoint"]}computervision/retrieval:vectorizeText?api-version=2023-02-01'
+        f'-preview&modelVersion=latest')
+    headers = {'Content-type': 'application/json',
+               'Ocp-Apim-Subscription-Key': config['vision_key']}
+    data = {'text': text}
+    result = requests.post(url=url, headers=headers, json=data)
+    text_vector = result.json()['vector']
+    return text_vector
