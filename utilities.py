@@ -1,4 +1,5 @@
 import datetime
+import math
 import os
 import sys
 from os.path import exists
@@ -94,3 +95,22 @@ def download_file_from_line(message_id, message_type):
         for chunk in source.iter_content():
             fd.write(chunk)
     return file_path
+
+
+def get_cosine_similarity(vector1, vector2):
+    """Get the cosine similarity between two vectors.
+
+    :param list vector1: Vector 1
+    :param list vector2: Vector 2
+    :return float cosine_similarity: Cosine similarity
+    """
+    dot_product = 0
+    length = min(len(vector1), len(vector2))
+
+    for i in range(length):
+        dot_product += vector1[i] * vector2[i]
+
+    magnitude1 = math.sqrt(sum(x * x for x in vector1))
+    magnitude2 = math.sqrt(sum(x * x for x in vector2))
+
+    return dot_product / (magnitude1 * magnitude2)
