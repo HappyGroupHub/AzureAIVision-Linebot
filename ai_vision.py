@@ -1,3 +1,6 @@
+import json
+import os
+
 import azure.ai.vision as sdk
 import requests
 
@@ -77,3 +80,20 @@ def get_vectorize_text(text):
     result = requests.post(url=url, headers=headers, json=data)
     text_vector = result.json()['vector']
     return text_vector
+
+
+def vectorize_imageset(imageset_path):
+    """Vectorize imageset.
+
+    :param str imageset_path: Imageset path
+    :return str imageset_embeddings_path : Imageset embeddings path
+    """
+    imageset_vector = []
+    for image in os.listdir(imageset_path):
+        image_path = f'{imageset_path}/{image}'
+        image_vector = get_vectorize_image(image_path)
+        imageset_vector.append(image_vector)
+        print(f'Vectorize image: {image}')
+    with open(f'{imageset_path}/imageset_embeddings.json', 'w') as f:
+        json.dump(imageset_vector, f)
+    return f'{imageset_path}/imageset_embeddings.json'
