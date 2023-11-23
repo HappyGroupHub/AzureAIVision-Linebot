@@ -88,12 +88,17 @@ def vectorize_imageset(imageset_path):
     :param str imageset_path: Imageset path
     :return str imageset_embeddings_path : Imageset embeddings path
     """
-    imageset_vector = []
+    result_path = f'{imageset_path}/imageset_embeddings.json'
+    if os.path.exists(result_path):
+        with open(result_path) as f:
+            imageset_vector = json.load(f)
+        return imageset_vector
+    imageset_vector = {}
     for image in os.listdir(imageset_path):
         image_path = f'{imageset_path}/{image}'
         image_vector = get_vectorize_image(image_path)
-        imageset_vector.append(image_vector)
+        imageset_vector[image] = image_vector
         print(f'Vectorize image: {image}')
-    with open(f'{imageset_path}/imageset_embeddings.json', 'w') as f:
+    with open(result_path, 'w') as f:
         json.dump(imageset_vector, f)
-    return f'{imageset_path}/imageset_embeddings.json'
+    return imageset_vector
