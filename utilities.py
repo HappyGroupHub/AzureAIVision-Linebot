@@ -116,17 +116,17 @@ def get_cosine_similarity(vector1, vector2):
     return dot_product / (magnitude1 * magnitude2)
 
 
-def get_top_n_similar_images(image_vector, imageset_vector, n=3):
+def get_top_n_similar_images(target_vector, imageset_vector, n=3):
     """Get top n similar images from imageset.
 
-    :param list image_vector: Image vector
+    :param list target_vector: Given vector, can be image vector or text vector
     :param list imageset_vector: Imageset vector
     :param int n: Number of similar images, default is 3
     :return list top_n_similar_images: Top n similar images
     """
     similarity_dict = {}
     for image in imageset_vector:
-        similarity = get_cosine_similarity(image_vector, imageset_vector[image])
+        similarity = get_cosine_similarity(target_vector, imageset_vector[image])
         similarity_dict[image] = similarity
     top_n_similar_images = sorted(similarity_dict.items(), key=lambda x: x[1], reverse=True)[:n]
     return top_n_similar_images

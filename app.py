@@ -1,10 +1,13 @@
+from fastapi.responses import FileResponse
+from pathlib import Path
+
 import uvicorn
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from linebot.v3 import WebhookHandler
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.messaging import Configuration, ApiClient, MessagingApi, ReplyMessageRequest, \
-    TextMessage, ImageMessage
+    TextMessage, ImageMessage, PushMessageRequest
 from linebot.v3.webhooks import MessageEvent, TextMessageContent, FollowEvent, ImageMessageContent
 
 import ai_vision
@@ -18,7 +21,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["POST"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
@@ -27,7 +30,17 @@ configuration = Configuration(access_token=config['line_channel_access_token'])
 handler = WebhookHandler(config['line_channel_secret'])
 
 config = utils.read_config()
+endpoint_url = 'https://advanced-romantic-seagull.ngrok-free.app'
+imageset_path = './example_imageset/'
 user_action = {}
+
+
+@app.get("/getimage/{image_name}")
+async def get_image(image_name: str):
+    image_path = Path(imageset_path + image_name)
+    if not image_path.exists():
+        raise HTTPException(status_code=404, detail="Image not found.")
+    return FileResponse(image_path)
 
 
 @app.post("/callback")
@@ -123,12 +136,26 @@ def handle_image(event):
             user_action.pop(user_id)
             image_path = utils.download_file_from_line(message_id, 'image')
             analysis = ai_vision.get_image_caption(file_name=image_path)
+            image_vector = ai_vision.get_vectorize_image(image_path)
+            imageset_vector = ai_vision.vectorize_imageset('example_imageset')
+            similar_images = utils.get_top_n_similar_images(image_vector, imageset_vector, n=1)
+            similar_image, similarity = similar_images[0]
+            similar_image_url = f'{endpoint_url}/getimage/{similar_image}'.replace(' ', '%20')
             reply_message = f"Caption: {analysis['caption']}\n" \
-                            f"Confidence: {analysis['confidence']}"
+                            f"Confidence: {analysis['confidence']}\n" \
+                            f"Top similar image: {similar_image}\n" \
+                            f"Similarity: {similarity}"
             line_bot_api.reply_message_with_http_info(
                 ReplyMessageRequest(
                     reply_token=reply_token,
                     messages=[TextMessage(text=reply_message)]
+                )
+            )
+            line_bot_api.push_message_with_http_info(
+                PushMessageRequest(
+                    to=user_id,
+                    messages=[ImageMessage(original_content_url=similar_image_url,
+                                           preview_image_url=similar_image_url)]
                 )
             )
         elif user_action[user_id] == 'processing':
