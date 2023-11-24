@@ -1,13 +1,13 @@
-from fastapi.responses import FileResponse
 from pathlib import Path
 
 import uvicorn
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from linebot.v3 import WebhookHandler
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.messaging import Configuration, ApiClient, MessagingApi, ReplyMessageRequest, \
-    TextMessage, ImageMessage, PushMessageRequest
+    TextMessage, ImageMessage, QuickReply, MessageAction, QuickReplyItem
 from linebot.v3.webhooks import MessageEvent, TextMessageContent, FollowEvent, ImageMessageContent
 
 import ai_vision
@@ -84,16 +84,37 @@ def handle_message(event):
             )
         elif message_received == "Generate Image":
             user_action[user_id] = 'generate_image'
-            reply_message = f"Tell me what image would you like to generate today!\n" \
-                            f"Processing might take a while, please be patient for the result."
+            reply_message = f"How would you like to generate the image?"
             line_bot_api.reply_message_with_http_info(
                 ReplyMessageRequest(
                     reply_token=reply_token,
-                    messages=[TextMessage(text=reply_message)]
+                    messages=[TextMessage(text=reply_message,
+                                          quick_reply=QuickReply(items=[QuickReplyItem(
+                                              action=MessageAction(
+                                                  label="AI Imagination",
+                                                  text="Generate image randomly with AI imagination")),
+                                              QuickReplyItem(
+                                                  action=MessageAction(
+                                                      label="Find Similar Image",
+                                                      text="Find the most similar image")
+                                              )]))]
                 )
             )
         elif user_id in user_action:
             if user_action[user_id] == 'generate_image':
+                if message_received == 'Generate image randomly with AI imagination':
+                    user_action[user_id] = 'generate_image_aoai'
+                elif message_received == 'Find the most similar image':
+                    user_action[user_id] = 'find_similar_image'
+                reply_message = f"Now tell me more about this image!\n" \
+                                f"Processing might take a while, please be patient for the result."
+                line_bot_api.reply_message_with_http_info(
+                    ReplyMessageRequest(
+                        reply_token=reply_token,
+                        messages=[TextMessage(text=reply_message)]
+                    )
+                )
+            elif user_action[user_id] == 'generate_image_aoai':
                 user_action[user_id] = 'processing'
                 image_url = aoai.generate_image_with_text(message_received)['image_url']
                 user_action.pop(user_id)
@@ -102,6 +123,24 @@ def handle_message(event):
                         reply_token=reply_token,
                         messages=[ImageMessage(original_content_url=image_url,
                                                preview_image_url=image_url)]
+                    )
+                )
+            elif user_action[user_id] == 'find_similar_image':
+                user_action[user_id] = 'processing'
+                text_vector = ai_vision.get_vectorize_text(message_received)
+                imageset_vector = ai_vision.vectorize_imageset(imageset_path)
+                similar_images = utils.get_top_n_similar_images(text_vector, imageset_vector, n=1)
+                similar_image, similarity = similar_images[0]
+                similar_image_url = f'{webhook_url}/getimage/{similar_image}'.replace(' ', '%20')
+                user_action.pop(user_id)
+                reply_message = f"Top similar image: {similar_image}\n" \
+                                f"Similarity: {similarity}"
+                line_bot_api.reply_message_with_http_info(
+                    ReplyMessageRequest(
+                        reply_token=reply_token,
+                        messages=[TextMessage(text=reply_message),
+                                  ImageMessage(original_content_url=similar_image_url,
+                                               preview_image_url=similar_image_url)]
                     )
                 )
             elif user_action[user_id] == 'processing':
@@ -148,13 +187,8 @@ def handle_image(event):
             line_bot_api.reply_message_with_http_info(
                 ReplyMessageRequest(
                     reply_token=reply_token,
-                    messages=[TextMessage(text=reply_message)]
-                )
-            )
-            line_bot_api.push_message_with_http_info(
-                PushMessageRequest(
-                    to=user_id,
-                    messages=[ImageMessage(original_content_url=similar_image_url,
+                    messages=[TextMessage(text=reply_message),
+                              ImageMessage(original_content_url=similar_image_url,
                                            preview_image_url=similar_image_url)]
                 )
             )
@@ -167,14 +201,14 @@ def handle_image(event):
                     messages=[TextMessage(text=reply_message)]
                 )
             )
-    else:
-        reply_message = f"Please open the menu to select which service you want to use."
-        line_bot_api.reply_message_with_http_info(
-            ReplyMessageRequest(
-                reply_token=reply_token,
-                messages=[TextMessage(text=reply_message)]
+        else:
+            reply_message = f"Please open the menu to select which service you want to use."
+            line_bot_api.reply_message_with_http_info(
+                ReplyMessageRequest(
+                    reply_token=reply_token,
+                    messages=[TextMessage(text=reply_message)]
+                )
             )
-        )
 
 
 @handler.add(FollowEvent)
