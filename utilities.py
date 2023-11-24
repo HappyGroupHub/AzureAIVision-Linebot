@@ -17,13 +17,22 @@ def config_file_generator():
 # | Made by LD                       |
 # ++--------------------------------++
 
+# Paste your endpoint for the webhook here.
+# You can use ngrok to get a free static endpoint now!
+# Find out more here: https://ngrok.com/
+# Notes: Make sure the webhook url is started with https:// and ended without a slash (/)
+webhook_url: ''
+# Port for the webhook to listen on. Default is 5000.
+# If you change this, make sure to change the port in your reverse proxy as well.
+webhook_port: 5000
+
 # Azure AI Vision API Key
 vision_key: ""
 vision_endpoint: ""
 
 # Azure OpenAI API Key
-aoai_key: '9197f1e023364cd489f3c29e71dceaa4'
-aoai_endpoint: 'https://20th-ld-aivision-aoai.openai.azure.com/'
+aoai_key: ''
+aoai_endpoint: ''
 
 # Line Channel Access Token & Secret
 line_channel_access_token: ""
@@ -51,6 +60,8 @@ def read_config():
         with open('config.yml', encoding="utf8") as file:
             data = yaml.load(file, Loader=SafeLoader)
             config = {
+                'webhook_url': data['webhook_url'],
+                'webhook_port': data['webhook_port'],
                 'vision_key': data['vision_key'],
                 'vision_endpoint': data['vision_endpoint'],
                 'aoai_key': data['aoai_key'],

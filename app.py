@@ -30,7 +30,7 @@ configuration = Configuration(access_token=config['line_channel_access_token'])
 handler = WebhookHandler(config['line_channel_secret'])
 
 config = utils.read_config()
-endpoint_url = 'https://advanced-romantic-seagull.ngrok-free.app'
+webhook_url = config['webhook_url']
 imageset_path = './example_imageset/'
 user_action = {}
 
@@ -140,7 +140,7 @@ def handle_image(event):
             imageset_vector = ai_vision.vectorize_imageset('example_imageset')
             similar_images = utils.get_top_n_similar_images(image_vector, imageset_vector, n=1)
             similar_image, similarity = similar_images[0]
-            similar_image_url = f'{endpoint_url}/getimage/{similar_image}'.replace(' ', '%20')
+            similar_image_url = f'{webhook_url}/getimage/{similar_image}'.replace(' ', '%20')
             reply_message = f"Caption: {analysis['caption']}\n" \
                             f"Confidence: {analysis['confidence']}\n" \
                             f"Top similar image: {similar_image}\n" \
@@ -192,4 +192,4 @@ def handle_follow(event):
 
 
 if __name__ == '__main__':
-    uvicorn.run(app, port=5000)
+    uvicorn.run(app, port=config['webhook_port'])
